@@ -229,9 +229,27 @@
                 <label for="openai-model">Modelo OpenAI (opcional):</label>
                 <input type="text" id="openai-model" placeholder="gpt-3.5-turbo (defecto)">
             </div>
-            <div id="openrouter-model-info" style="display:none;">
-                <p>Modelo para OpenRouter.ai: <code>mistralai/mistral-7b-instruct</code> (no configurable en esta app).</p>
+
+            <!-- NUEVO: Contenedor para la configuración del modelo de OpenRouter -->
+            <div id="openrouter-model-config" style="display:none;">
+                <label for="openrouter-model">Modelo OpenRouter.ai:</label>
+                <select id="openrouter-model">
+                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B Instruct (Free)</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B Instruct (Free)</option>
+                    <option value="google/gemini-flash-1.5">Google Gemini Flash 1.5</option>
+                    <option value="openai/gpt-3.5-turbo">OpenAI GPT-3.5 Turbo (via OpenRouter)</option>
+                    <option value="anthropic/claude-3-haiku">Anthropic Claude 3 Haiku</option>
+                    <option value="nousresearch/nous-hermes-2-mixtral-8x7b-dpo:free">Nous Hermes 2 Mixtral 8x7B DPO (Free)</option>
+                    <!-- Puedes añadir más modelos aquí según la oferta de OpenRouter -->
+                </select>
+                <p style="font-size: 0.8em; color: #555; margin-top: 5px;">
+                    Selecciona un modelo de OpenRouter. Los modelos marcados como "(Free)" suelen tener límites de uso generosos sin coste.
+                    Otros pueden requerir que tengas fondos en tu cuenta de OpenRouter.
+                </p>
             </div>
+            <!-- FIN NUEVO -->
+
+            <!-- Eliminado el openrouter-model-info que era solo texto -->
 
             <div class="modal-buttons">
                 <button id="cancel-api-key" class="cancel-button">Cancelar</button>
@@ -263,6 +281,7 @@
         let apiKey = '';
         let apiProvider = 'openai';
         let openAIModel = 'gpt-3.5-turbo';
+        let openRouterModel = 'mistralai/mistral-7b-instruct:free'; // NUEVO: Variable para el modelo de OpenRouter
         let initialUserIdea = '';
         let isViewingHistory = false;
 
@@ -281,7 +300,6 @@
         const dialogueHistorySection = document.getElementById('dialogue-history-section');
         const dialogueHistoryList = document.getElementById('dialogue-history-list');
         const progressBarContainer = document.getElementById('socratic-progress-bar-container');
-        // Modal elements will be accessed within DOMContentLoaded for listeners or functions needing them
         
         function setupProgressBar() {
             progressBarContainer.innerHTML = '';
@@ -309,7 +327,7 @@
                             segment.classList.add('active');
                         }
                     }
-                } else { // Viewing history
+                } else { 
                     const activeHistoryItem = dialogueHistoryList.querySelector('.active-history-item');
                     if (activeHistoryItem) {
                         const dialogueIndex = parseInt(activeHistoryItem.dataset.index, 10);
@@ -320,21 +338,24 @@
                     }
                 }
             });
-            socraticStepDisplayInfoBox.style.display = 'none'; // Primarily use progress bar
+            socraticStepDisplayInfoBox.style.display = 'none'; 
         }
 
         function loadApiSettings() {
             apiKey = localStorage.getItem('socraticApiKey') || '';
             apiProvider = localStorage.getItem('socraticApiProvider') || 'openai';
             openAIModel = localStorage.getItem('socraticOpenAIModel') || 'gpt-3.5-turbo';
-            
+            openRouterModel = localStorage.getItem('socraticOpenRouterModel') || 'mistralai/mistral-7b-instruct:free'; // NUEVO: Cargar modelo OpenRouter
+
             const apiKeyInputEl = document.getElementById('api-key-input');
             const apiProviderSelectEl = document.getElementById('api-provider');
             const openAIModelInputEl = document.getElementById('openai-model');
+            const openRouterModelSelectEl = document.getElementById('openrouter-model'); // NUEVO: Referencia al selector de modelo OpenRouter
 
             if(apiKeyInputEl) apiKeyInputEl.value = apiKey;
             if(apiProviderSelectEl) apiProviderSelectEl.value = apiProvider;
             if(openAIModelInputEl) openAIModelInputEl.value = openAIModel;
+            if(openRouterModelSelectEl) openRouterModelSelectEl.value = openRouterModel; // NUEVO: Establecer valor del selector OpenRouter
             
             updateApiProviderFields();
             if (apiKey) enableControlsApiKeyPresent(); else disableControlsApiKeyMissing();
@@ -344,17 +365,19 @@
             const apiKeyInputEl = document.getElementById('api-key-input');
             const apiProviderSelectEl = document.getElementById('api-provider');
             const openAIModelInputEl = document.getElementById('openai-model');
+            const openRouterModelSelectEl = document.getElementById('openrouter-model'); // NUEVO: Referencia al selector de modelo OpenRouter
             const apiKeyModalEl = document.getElementById('api-key-modal');
-
 
             apiKey = apiKeyInputEl.value.trim();
             apiProvider = apiProviderSelectEl.value;
             openAIModel = openAIModelInputEl.value.trim() || 'gpt-3.5-turbo';
+            openRouterModel = openRouterModelSelectEl.value; // NUEVO: Guardar modelo OpenRouter seleccionado
 
             if (!apiKey) { alert('Por favor, introduce una API Key.'); return; }
             localStorage.setItem('socraticApiKey', apiKey);
             localStorage.setItem('socraticApiProvider', apiProvider);
             localStorage.setItem('socraticOpenAIModel', openAIModel);
+            localStorage.setItem('socraticOpenRouterModel', openRouterModel); // NUEVO: Guardar en localStorage
             
             if(apiKeyModalEl) apiKeyModalEl.style.display = 'none';
             alert('Configuración de API guardada.');
@@ -364,12 +387,13 @@
         function updateApiProviderFields() {
             const apiProviderSelectEl = document.getElementById('api-provider');
             const openAIModelConfigDivEl = document.getElementById('openai-model-config');
-            const openRouterModelInfoDivEl = document.getElementById('openrouter-model-info');
+            const openRouterModelConfigDivEl = document.getElementById('openrouter-model-config'); // NUEVO: Referencia al div del selector de OpenRouter
 
-            if (!apiProviderSelectEl || !openAIModelConfigDivEl || !openRouterModelInfoDivEl) return;
+            if (!apiProviderSelectEl || !openAIModelConfigDivEl || !openRouterModelConfigDivEl) return;
 
-            openAIModelConfigDivEl.style.display = (apiProviderSelectEl.value === 'openai') ? 'block' : 'none';
-            openRouterModelInfoDivEl.style.display = (apiProviderSelectEl.value === 'openrouter') ? 'block' : 'none';
+            const selectedProvider = apiProviderSelectEl.value;
+            openAIModelConfigDivEl.style.display = (selectedProvider === 'openai') ? 'block' : 'none';
+            openRouterModelConfigDivEl.style.display = (selectedProvider === 'openrouter') ? 'block' : 'none'; // NUEVO: Mostrar/ocultar el selector de OpenRouter
         }
 
         function enableControlsApiKeyPresent() {
@@ -495,30 +519,28 @@
             if (currentStepIndex === 0 && !initialUserIdea) initialUserIdea = userMessageText;
 
             try {
-                const aiResponse = await getAIResponse(userMessageText); // This function might now update currentStepIndex
+                const aiResponse = await getAIResponse(userMessageText); 
                 addMessageToChatArea('ai', aiResponse);
                 currentDialogueMessages.push({ role: 'assistant', content: aiResponse });
                 displayedDialogueMessages = [...currentDialogueMessages];
-                interactionsInCurrentStep++; // Increment after AI response, meaning one full user-AI exchange
+                interactionsInCurrentStep++; 
 
-                // Initial step advancements are more direct
-                if (currentStepIndex === 0 && interactionsInCurrentStep >= 1) { // Planteamiento -> Ironía
+                if (currentStepIndex === 0 && interactionsInCurrentStep >= 1) { 
                     currentStepIndex++;
                     interactionsInCurrentStep = 0;
-                } else if (currentStepIndex === 1 && interactionsInCurrentStep >= 1) { // Ironía -> Elenchus
+                } else if (currentStepIndex === 1 && interactionsInCurrentStep >= 1) { 
                     currentStepIndex++;
                     interactionsInCurrentStep = 0;
                 }
-                // Nudge takes care of other advancements, or if AI indicates completion (not implemented here)
-
-                if (currentStepIndex >= socraticSteps.length -1 && interactionsInCurrentStep >= MIN_INTERACTIONS_PER_STEP) { // Check if dialogue ended
+                
+                if (currentStepIndex >= socraticSteps.length -1 && interactionsInCurrentStep >= MIN_INTERACTIONS_PER_STEP) { 
                      addSystemMessageToChat("Has completado los pasos socráticos. Puedes reflexionar, reiniciar o iniciar uno nuevo.");
                 }
                 updateProgressBar();
 
             } catch (error) {
                 console.error('Error fetching AI response:', error);
-                addSystemMessageToChat(`Error: ${error.message}. Revisa tu API Key y la consola.`);
+                addSystemMessageToChat(`Error: ${error.message}. Revisa tu API Key, el modelo seleccionado y la consola.`); // Mensaje de error mejorado
             } finally {
                 sendButton.disabled = false;
                 userInput.disabled = false;
@@ -538,9 +560,8 @@
                 .replace('{LAST_USER_RESPONSE}', currentUserMessage);
 
             let nudgeMessage = "";
-            // Nudge logic: if not first two steps, and max interactions reached, and not the last step
             if (currentStepIndex > 1 &&
-                interactionsInCurrentStep >= MAX_INTERACTIONS_PER_STEP -1 && // -1 because interactionsInCurrentStep increments after this call
+                interactionsInCurrentStep >= MAX_INTERACTIONS_PER_STEP -1 && 
                 currentStepIndex < socraticSteps.length - 1) {
                 nudgeMessage = ` Has estado en este paso por varias interacciones. Considera guiar la conversación hacia los objetivos de la siguiente etapa: "${socraticSteps[currentStepIndex + 1].name}".`;
             }
@@ -552,12 +573,18 @@
 
             const messagesForAPI = [ systemMessage, ...currentDialogueMessages.slice(-8) ];
             let apiURL, requestBody;
+
             if (apiProvider === 'openai') {
                 apiURL = 'https://api.openai.com/v1/chat/completions';
                 requestBody = { model: openAIModel, messages: messagesForAPI, temperature: 0.65 };
-            } else {
+            } else { // openrouter
                 apiURL = 'https://openrouter.ai/api/v1/chat/completions';
-                requestBody = { model: 'mistralai/mistral-7b-instruct', messages: messagesForAPI, temperature: 0.65 };
+                // NUEVO: Usar el modelo de OpenRouter seleccionado por el usuario
+                if (!openRouterModel) { // Fallback por si acaso no hay modelo seleccionado
+                    console.warn("No OpenRouter model selected, defaulting to mistralai/mistral-7b-instruct:free");
+                    openRouterModel = 'mistralai/mistral-7b-instruct:free';
+                }
+                requestBody = { model: openRouterModel, messages: messagesForAPI, temperature: 0.65 };
             }
 
             const response = await fetch(apiURL, {
@@ -577,10 +604,9 @@
             const data = await response.json();
             const aiContent = data.choices[0].message.content.trim();
 
-            // If nudge was active and we are not in the last step, advance.
             if (nudgeMessage && currentStepIndex < socraticSteps.length - 1) {
                 currentStepIndex++;
-                interactionsInCurrentStep = 0; // Reset for the new step
+                interactionsInCurrentStep = 0; 
             }
             return aiContent;
         }
@@ -603,9 +629,9 @@
             if (!selectedDialogue) return;
             isViewingHistory = true;
             populateChatArea(selectedDialogue.messages);
-            // Update progress bar based on the final step of the historic dialogue
+            
             const segments = progressBarContainer.querySelectorAll('.progress-segment');
-            segments.forEach(s => s.classList.remove('active', 'visible')); // Clear all first
+            segments.forEach(s => s.classList.remove('active', 'visible')); 
             segments.forEach((segment, idx) => {
                 if (idx <= (selectedDialogue.finalStep || 0) ) {
                     segment.classList.add('visible');
@@ -622,7 +648,7 @@
         }
 
         function exportToMarkdown() {
-            if (!displayedDialogueMessages || displayedDialogueMessages.length === 0) { alert("No hay diálogo para exportar."); return; }
+             if (!displayedDialogueMessages || displayedDialogueMessages.length === 0) { alert("No hay diálogo para exportar."); return; }
             let markdownContent = `# Diálogo Socrático\n\n`;
             displayedDialogueMessages.forEach(msg => {
                 if (msg.role === 'user') markdownContent += `**Usuario:** ${msg.content}\n\n`;
@@ -660,7 +686,7 @@
             exportPdfButton.addEventListener('click', exportToPDF);
 
             setupProgressBar();
-            loadApiSettings();
+            loadApiSettings(); // Asegúrate de que esto ahora carga el modelo de OpenRouter también
             updateProgressBar();
             restartDialogueButton.disabled = true;
             updateExportButtonState();
