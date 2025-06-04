@@ -20,7 +20,7 @@
         .app-wrapper {
             display: flex;
             flex-direction: row;
-            max-width: 1000px;
+            max-width: 1000px; /* Aumentado un poco para el selector de perfil */
             margin: 20px auto;
             gap: 15px;
         }
@@ -96,6 +96,9 @@
         button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
         button.secondary-action { background-color: #2ecc71; }
         button.secondary-action:hover { background-color: #27ae60; }
+        button.cancel-button { background-color: #e74c3c !important; } /* Estilo para botones de borrar/cancelar */
+        button.cancel-button:hover { background-color: #c0392b !important; }
+
 
         #socratic-step-display {
              background-color: #eaf2f8; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #3498db;
@@ -136,8 +139,8 @@
         .modal-content input[type="text"], .modal-content input[type="password"], .modal-content select { width: calc(100% - 22px); padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         .modal-buttons { text-align: right; }
         .modal-buttons button { margin-left: 10px; }
-        .modal-buttons button.cancel-button { background-color: #e74c3c; }
-        .modal-buttons button.cancel-button:hover { background-color: #c0392b; }
+        /* .modal-buttons button.cancel-button { background-color: #e74c3c; } Ya definido globalmente */
+        /* .modal-buttons button.cancel-button:hover { background-color: #c0392b; } Ya definido globalmente */
 
         .tooltip { position: relative; display: inline-block; cursor: help; }
         .tooltip .tooltiptext { visibility: hidden; width: 220px; background-color: #555; color: #fff; text-align: center; border-radius: 6px; padding: 5px 0; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 0.8em; }
@@ -147,16 +150,18 @@
         #dialogue-history-section { margin-top: 30px; padding-top: 20px; border-top: 2px solid #3498db; }
         #dialogue-history-section h2 { color: #2c3e50; margin-bottom: 10px; }
         #dialogue-history-list { list-style: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px; }
-        #dialogue-history-list li { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background-color 0.2s; }
+        #dialogue-history-list li { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; /* cursor: pointer; No más cursor en el LI, sino en el span del título */ display: flex; justify-content: space-between; align-items: center; }
         #dialogue-history-list li:last-child { border-bottom: none; }
-        #dialogue-history-list li:hover { background-color: #eaf2f8; }
+        #dialogue-history-list li:hover { background-color: #eaf2f8; } /* Efecto hover general para el LI */
         #dialogue-history-list li.active-history-item { background-color: #d1e6f5; font-weight: bold; }
+        #dialogue-history-list li .history-item-title { flex-grow: 1; cursor: pointer; } /* Para el título clicable */
+        #dialogue-history-list li .history-item-actions button { margin-left: 5px; }
 
         @media print {
             body { background-color: #fff; font-size: 12pt; }
             .app-wrapper, #socratic-progress-bar-container { display: none !important; }
             .container { max-width: 100%; margin: 0; padding: 0; box-shadow: none; border-radius: 0; }
-            header, .controls, .export-controls, .input-area, #api-key-modal, #socratic-step-display, #thinking-indicator, #dialogue-history-section, #config-api-key-button, #start-dialogue-button, #restart-dialogue-button, #export-md-button, #export-pdf-button, #user-input, #send-button, .modal, .tooltip, .initial-prompt-display { display: none !important; }
+            header, .controls, .export-controls, .input-area, #api-key-modal, #socratic-step-display, #thinking-indicator, #dialogue-history-section, #config-api-key-button, #start-dialogue-button, #restart-dialogue-button, #export-md-button, #export-pdf-button, #user-input, #send-button, .modal, .tooltip, .initial-prompt-display, #suggested-topics-container /* Ocultar sugerencias al imprimir */ { display: none !important; }
             #chat-area { display: block !important; border: none; height: auto; overflow-y: visible; min-height: 0; }
             .message { max-width: 100%; page-break-inside: avoid; }
             .user-message, .ai-message { background-color: #f0f0f0 !important; color: #000 !important; border: 1px solid #ccc; }
@@ -172,10 +177,19 @@
                 <h1>Diálogo Socrático Asistido por IA</h1>
                 <p>Explora tus ideas con un Sócrates virtual.</p>
             </header>
+            
+            <div id="suggested-topics-container" style="display: none; margin-bottom: 15px; padding: 15px; background-color: #eaf2f8; border-radius: 5px; border: 1px solid #d1e0ec;">
+                <h3 style="margin-top: 0; margin-bottom: 10px; color: #2980b9;">¿Necesitas inspiración? Comienza con uno de estos temas:</h3>
+                <ul id="suggested-topics-list" style="list-style: none; padding-left: 0; margin-bottom: 0;">
+                    </ul>
+            </div>
 
             <div id="initial-prompt-display-area" style="display: none;"></div>
 
             <div class="controls">
+                <label for="socrates-profile-select" style="margin-right: 5px; font-size: 0.9em; color: #555;">Estilo de Sócrates:</label>
+                <select id="socrates-profile-select" style="margin-right: 10px; padding: 8px 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 0.9em; background-color: white;">
+                    </select>
                 <button id="config-api-key-button">Configurar API Key</button>
                 <button id="start-dialogue-button">Iniciar Diálogo Nuevo</button>
                 <button id="restart-dialogue-button">Reiniciar Diálogo Actual</button>
@@ -185,7 +199,7 @@
                 <button id="export-pdf-button" class="secondary-action" disabled>Exportar Diálogo a PDF</button>
             </div>
 
-            <div id="socratic-step-display" class="socratic-step-info" style="display: none;"> <!-- Kept for now, but can be removed if progress bar is sufficient -->
+            <div id="socratic-step-display" class="socratic-step-info" style="display: none;">
                 <h3 id="current-step-name"></h3>
                 <p id="current-step-description"></p>
             </div>
@@ -202,13 +216,12 @@
             </div>
 
             <div id="dialogue-history-section" style="display: none;">
-                <h2>Historial de Diálogos de la Sesión</h2>
+                <h2>Historial de Diálogos</h2>
                 <ul id="dialogue-history-list"></ul>
             </div>
         </div>
     </div>
 
-    <!-- API Key Modal -->
     <div id="api-key-modal" class="modal">
         <div class="modal-content">
             <h2>Configurar API Key</h2>
@@ -230,7 +243,6 @@
                 <input type="text" id="openai-model" placeholder="gpt-3.5-turbo (defecto)">
             </div>
 
-            <!-- NUEVO: Contenedor para la configuración del modelo de OpenRouter -->
             <div id="openrouter-model-config" style="display:none;">
                 <label for="openrouter-model">Modelo OpenRouter.ai:</label>
                 <select id="openrouter-model">
@@ -240,16 +252,12 @@
                     <option value="openai/gpt-3.5-turbo">OpenAI GPT-3.5 Turbo (via OpenRouter)</option>
                     <option value="anthropic/claude-3-haiku">Anthropic Claude 3 Haiku</option>
                     <option value="nousresearch/nous-hermes-2-mixtral-8x7b-dpo:free">Nous Hermes 2 Mixtral 8x7B DPO (Free)</option>
-                    <!-- Puedes añadir más modelos aquí según la oferta de OpenRouter -->
                 </select>
                 <p style="font-size: 0.8em; color: #555; margin-top: 5px;">
                     Selecciona un modelo de OpenRouter. Los modelos marcados como "(Free)" suelen tener límites de uso generosos sin coste.
                     Otros pueden requerir que tengas fondos en tu cuenta de OpenRouter.
                 </p>
             </div>
-            <!-- FIN NUEVO -->
-
-            <!-- Eliminado el openrouter-model-info que era solo texto -->
 
             <div class="modal-buttons">
                 <button id="cancel-api-key" class="cancel-button">Cancelar</button>
@@ -270,20 +278,36 @@
         const socraticStepColors = ['#4A90E2', '#50E3C2', '#F5A623', '#D0021B', '#BD10E0', '#7ED321'];
 
         const MIN_INTERACTIONS_PER_STEP = 2;
-        const MAX_INTERACTIONS_PER_STEP = 5;
+        const MAX_INTERACTIONS_PER_STEP = 5; // Usado para el "nudge"
 
+        const suggestedTopics = [
+            "¿Qué es la justicia?", "¿Qué es la verdad?", "¿Qué es la belleza?",
+            "¿La felicidad depende de factores externos o internos?",
+            "¿Es el conocimiento lo mismo que la sabiduría?", "¿Qué significa vivir una buena vida?",
+            "¿Tenemos libre albedrío?", "¿Cuál es el propósito de la educación?",
+            "¿Qué es la amistad?", "¿Debemos temer a la muerte?"
+        ];
+
+        const socratesProfiles = [
+            { id: 'classic', displayName: 'Sócrates Clásico', stylePromptModifier: "Mantén un tono equilibrado, usando la ironía con moderación y enfocándote en la claridad lógica de las preguntas." },
+            { id: 'patient', displayName: 'Sócrates Paciente', stylePromptModifier: "Adopta un tono especialmente paciente y alentador. Si el usuario parece confundido, ofrece reformular tus preguntas o abordar el punto desde otro ángulo. Evita la ironía marcada." },
+            { id: 'incisive', displayName: 'Sócrates Incisivo', stylePromptModifier: "Sé más directo y penetrante en tus preguntas. No temas presionar sobre las inconsistencias de forma más evidente. La brevedad y la agudeza son clave." },
+            { id: 'humble_learner', displayName: 'Sócrates Aprendiz Humilde', stylePromptModifier: "Enfatiza tu propia ignorancia (ironía socrática) de manera más pronunciada. Pide al usuario que te 'enseñe' con mucha claridad, como si fueras un completo novato en el tema, para forzarle a ser extremadamente explícito." }
+        ];
+        
         let currentStepIndex = 0;
         let interactionsInCurrentStep = 0;
         let currentDialogueMessages = [];
-        let displayedDialogueMessages = [];
-        let sessionDialogues = [];
+        let displayedDialogueMessages = []; // Mensajes actualmente en el chat-area (puede ser activo o histórico)
+        let sessionDialogues = []; // Almacena todos los diálogos archivados de la sesión/localStorage
 
         let apiKey = '';
         let apiProvider = 'openai';
         let openAIModel = 'gpt-3.5-turbo';
-        let openRouterModel = 'mistralai/mistral-7b-instruct:free'; // NUEVO: Variable para el modelo de OpenRouter
+        let openRouterModel = 'mistralai/mistral-7b-instruct:free';
+        let selectedSocratesProfileId = socratesProfiles[0].id; // Perfil por defecto
         let initialUserIdea = '';
-        let isViewingHistory = false;
+        let isViewingHistory = false; // Flag para saber si se está viendo un diálogo del historial
 
         // DOM Elements
         const chatArea = document.getElementById('chat-area');
@@ -292,7 +316,7 @@
         const startDialogueButton = document.getElementById('start-dialogue-button');
         const restartDialogueButton = document.getElementById('restart-dialogue-button');
         const configApiKeyButton = document.getElementById('config-api-key-button');
-        const socraticStepDisplayInfoBox = document.getElementById('socratic-step-display');
+        const socraticStepDisplayInfoBox = document.getElementById('socratic-step-display'); // Puede que se elimine si la barra es suficiente
         const thinkingIndicator = document.getElementById('thinking-indicator');
         const initialPromptDisplayArea = document.getElementById('initial-prompt-display-area');
         const exportMdButton = document.getElementById('export-md-button');
@@ -300,6 +324,9 @@
         const dialogueHistorySection = document.getElementById('dialogue-history-section');
         const dialogueHistoryList = document.getElementById('dialogue-history-list');
         const progressBarContainer = document.getElementById('socratic-progress-bar-container');
+        const suggestedTopicsContainer = document.getElementById('suggested-topics-container');
+        const suggestedTopicsList = document.getElementById('suggested-topics-list');
+        const socratesProfileSelect = document.getElementById('socrates-profile-select');
         
         function setupProgressBar() {
             progressBarContainer.innerHTML = '';
@@ -316,68 +343,94 @@
             });
         }
 
-        function updateProgressBar() {
+        function updateProgressBarForDialogue(dialogue) { // Modificada para aceptar un diálogo específico o null para el activo
             const segments = progressBarContainer.querySelectorAll('.progress-segment');
+            segments.forEach(s => s.classList.remove('active', 'visible')); 
+            
+            let stepToHighlight = 0;
+            let dialogueIsActive = !isViewingHistory;
+
+            if (isViewingHistory && dialogue) {
+                stepToHighlight = dialogue.finalStep;
+            } else if (!isViewingHistory) {
+                stepToHighlight = currentStepIndex;
+            }
+
             segments.forEach((segment, index) => {
-                segment.classList.remove('active', 'visible');
-                if (!isViewingHistory) {
-                    if (index <= currentStepIndex) {
-                        segment.classList.add('visible');
-                        if (index === currentStepIndex) {
-                            segment.classList.add('active');
-                        }
-                    }
-                } else { 
-                    const activeHistoryItem = dialogueHistoryList.querySelector('.active-history-item');
-                    if (activeHistoryItem) {
-                        const dialogueIndex = parseInt(activeHistoryItem.dataset.index, 10);
-                        const historicDialogue = sessionDialogues[dialogueIndex];
-                        if (historicDialogue && index <= (historicDialogue.finalStep || 0)) {
-                            segment.classList.add('visible');
-                        }
+                if (index <= stepToHighlight) {
+                    segment.classList.add('visible');
+                    // Solo marcar 'active' para el diálogo activo y el paso actual
+                    if (index === stepToHighlight && dialogueIsActive) { 
+                        segment.classList.add('active');
                     }
                 }
             });
-            socraticStepDisplayInfoBox.style.display = 'none'; 
+            socraticStepDisplayInfoBox.style.display = 'none'; // Ocultar el display de paso antiguo
         }
 
-        function loadApiSettings() {
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        function loadAppSettings() { // Renombrada de loadApiSettings
             apiKey = localStorage.getItem('socraticApiKey') || '';
             apiProvider = localStorage.getItem('socraticApiProvider') || 'openai';
             openAIModel = localStorage.getItem('socraticOpenAIModel') || 'gpt-3.5-turbo';
-            openRouterModel = localStorage.getItem('socraticOpenRouterModel') || 'mistralai/mistral-7b-instruct:free'; // NUEVO: Cargar modelo OpenRouter
+            openRouterModel = localStorage.getItem('socraticOpenRouterModel') || 'mistralai/mistral-7b-instruct:free';
+            selectedSocratesProfileId = localStorage.getItem('socraticSelectedProfileId') || socratesProfiles[0].id;
 
             const apiKeyInputEl = document.getElementById('api-key-input');
             const apiProviderSelectEl = document.getElementById('api-provider');
             const openAIModelInputEl = document.getElementById('openai-model');
-            const openRouterModelSelectEl = document.getElementById('openrouter-model'); // NUEVO: Referencia al selector de modelo OpenRouter
+            const openRouterModelSelectEl = document.getElementById('openrouter-model');
 
             if(apiKeyInputEl) apiKeyInputEl.value = apiKey;
             if(apiProviderSelectEl) apiProviderSelectEl.value = apiProvider;
             if(openAIModelInputEl) openAIModelInputEl.value = openAIModel;
-            if(openRouterModelSelectEl) openRouterModelSelectEl.value = openRouterModel; // NUEVO: Establecer valor del selector OpenRouter
+            if(openRouterModelSelectEl) openRouterModelSelectEl.value = openRouterModel;
+            if(socratesProfileSelect) socratesProfileSelect.value = selectedSocratesProfileId;
             
             updateApiProviderFields();
             if (apiKey) enableControlsApiKeyPresent(); else disableControlsApiKeyMissing();
+
+            const storedDialogues = localStorage.getItem('socraticSessionDialogues');
+            if (storedDialogues) {
+                try {
+                    sessionDialogues = JSON.parse(storedDialogues);
+                } catch (e) {
+                    console.error("Error al parsear diálogos guardados de localStorage:", e);
+                    sessionDialogues = [];
+                    localStorage.removeItem('socraticSessionDialogues');
+                }
+            } else {
+                sessionDialogues = [];
+            }
+            renderDialogueHistory(); // Siempre renderizar, incluso si está vacío (para mostrar/ocultar sección)
         }
 
         function saveApiSettings() {
             const apiKeyInputEl = document.getElementById('api-key-input');
             const apiProviderSelectEl = document.getElementById('api-provider');
             const openAIModelInputEl = document.getElementById('openai-model');
-            const openRouterModelSelectEl = document.getElementById('openrouter-model'); // NUEVO: Referencia al selector de modelo OpenRouter
+            const openRouterModelSelectEl = document.getElementById('openrouter-model');
             const apiKeyModalEl = document.getElementById('api-key-modal');
 
             apiKey = apiKeyInputEl.value.trim();
             apiProvider = apiProviderSelectEl.value;
             openAIModel = openAIModelInputEl.value.trim() || 'gpt-3.5-turbo';
-            openRouterModel = openRouterModelSelectEl.value; // NUEVO: Guardar modelo OpenRouter seleccionado
+            openRouterModel = openRouterModelSelectEl.value;
 
             if (!apiKey) { alert('Por favor, introduce una API Key.'); return; }
             localStorage.setItem('socraticApiKey', apiKey);
             localStorage.setItem('socraticApiProvider', apiProvider);
             localStorage.setItem('socraticOpenAIModel', openAIModel);
-            localStorage.setItem('socraticOpenRouterModel', openRouterModel); // NUEVO: Guardar en localStorage
+            localStorage.setItem('socraticOpenRouterModel', openRouterModel);
             
             if(apiKeyModalEl) apiKeyModalEl.style.display = 'none';
             alert('Configuración de API guardada.');
@@ -387,18 +440,21 @@
         function updateApiProviderFields() {
             const apiProviderSelectEl = document.getElementById('api-provider');
             const openAIModelConfigDivEl = document.getElementById('openai-model-config');
-            const openRouterModelConfigDivEl = document.getElementById('openrouter-model-config'); // NUEVO: Referencia al div del selector de OpenRouter
+            const openRouterModelConfigDivEl = document.getElementById('openrouter-model-config');
 
             if (!apiProviderSelectEl || !openAIModelConfigDivEl || !openRouterModelConfigDivEl) return;
 
             const selectedProvider = apiProviderSelectEl.value;
             openAIModelConfigDivEl.style.display = (selectedProvider === 'openai') ? 'block' : 'none';
-            openRouterModelConfigDivEl.style.display = (selectedProvider === 'openrouter') ? 'block' : 'none'; // NUEVO: Mostrar/ocultar el selector de OpenRouter
+            openRouterModelConfigDivEl.style.display = (selectedProvider === 'openrouter') ? 'block' : 'none';
         }
 
         function enableControlsApiKeyPresent() {
             startDialogueButton.disabled = false;
-            displayInitialSystemMessage("Configuración de API lista. Haz clic en 'Iniciar Diálogo Nuevo'.");
+            // Solo mostrar el mensaje inicial si no hay un diálogo activo o historial cargado
+            if (chatArea.style.display === 'none' && initialPromptDisplayArea.style.display === 'block' && displayedDialogueMessages.length === 0) {
+                 displayInitialSystemMessage("Configuración de API lista. Haz clic en 'Iniciar Diálogo Nuevo'.");
+            }
         }
         function disableControlsApiKeyMissing() {
             startDialogueButton.disabled = true;
@@ -410,113 +466,190 @@
             messageDiv.classList.add('message');
             if (isSystem) messageDiv.classList.add('system-message');
             else messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ai-message');
+            
+            // Para preservar saltos de línea y espacios en el texto de los mensajes
+            messageDiv.style.whiteSpace = "pre-wrap";
             messageDiv.textContent = text;
+
             chatArea.appendChild(messageDiv);
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
         function addSystemMessageToChat(text) {
             addMessageToChatArea('system', text, true);
-            if (!displayedDialogueMessages.find(m => m.role === 'system' && m.content === text)) {
-                 displayedDialogueMessages.push({role: 'system', content: text});
+            // Añadir al array displayedDialogueMessages si no estamos viendo historial
+            // y si realmente es un mensaje del sistema que debe persistir en el diálogo activo.
+            // Esta lógica puede necesitar refinamiento para qué mensajes de sistema se guardan.
+            if (!isViewingHistory && !displayedDialogueMessages.find(m => m.role === 'system' && m.content === text)) {
+                 displayedDialogueMessages.push({role: 'system', content: text}); 
+                 if (currentDialogueMessages.indexOf(displayedDialogueMessages[displayedDialogueMessages.length-1]) === -1){
+                    currentDialogueMessages.push(displayedDialogueMessages[displayedDialogueMessages.length-1]);
+                 }
             }
         }
-
+        
         function displayInitialSystemMessage(text, isInstruction = false) {
             initialPromptDisplayArea.textContent = text;
             initialPromptDisplayArea.style.display = 'block';
             chatArea.style.display = 'none';
             initialPromptDisplayArea.className = isInstruction ? 'initial-prompt-display' : '';
-            displayedDialogueMessages = [];
+            displayedDialogueMessages = []; // Limpiar mensajes mostrados al mostrar el prompt inicial
+
+            if (isInstruction && currentStepIndex === 0) {
+                showSuggestedTopics();
+            } else {
+                hideSuggestedTopics();
+            }
         }
 
         function populateChatArea(messages) {
             chatArea.innerHTML = '';
+            hideSuggestedTopics(); // Ocultar sugerencias cuando se puebla el chat
             initialPromptDisplayArea.style.display = 'none';
             chatArea.style.display = 'flex';
             messages.forEach(msg => addMessageToChatArea(msg.role, msg.content, msg.role === 'system'));
-            displayedDialogueMessages = [...messages];
+            displayedDialogueMessages = [...messages]; // Actualizar el array de mensajes mostrados
             updateExportButtonState();
         }
-
+        
         function updateExportButtonState() {
             const hasMessages = displayedDialogueMessages && displayedDialogueMessages.length > 0 &&
-                               !displayedDialogueMessages.every(m => m.role === 'system');
+                               !displayedDialogueMessages.every(m => m.role === 'system' && !m.content.startsWith("Has completado")); // Permitir exportar si hay mensaje de finalización
             exportMdButton.disabled = !hasMessages;
             exportPdfButton.disabled = !hasMessages;
         }
 
+        function archiveCurrentDialogue() {
+            // Solo archivar si hay mensajes significativos y no estamos viendo historial
+            if (!isViewingHistory && currentDialogueMessages.length > 0 && 
+                !currentDialogueMessages.every(m => m.role === 'system')) {
+                
+                const title = initialUserIdea || `Diálogo ${new Date(parseInt(currentDialogueMessages[0]?.dialogueId || Date.now())).toLocaleString()}`;
+                const dialogueId = currentDialogueMessages[0]?.dialogueId || Date.now().toString(); // Usar ID existente o crear uno nuevo
+
+                // Evitar duplicados si ya se archivó este ID (importante al continuar y luego archivar de nuevo)
+                const existingDialogueIndex = sessionDialogues.findIndex(d => d.id === dialogueId);
+                const dialogueObject = { 
+                    id: dialogueId,
+                    title: title, 
+                    messages: [...currentDialogueMessages], 
+                    finalStep: currentStepIndex,
+                    initialUserIdeaInternal: initialUserIdea,
+                    interactionsInCurrentStepInternal: interactionsInCurrentStep,
+                    profileIdUsed: selectedSocratesProfileId // Guardar el perfil usado
+                };
+
+                if (existingDialogueIndex > -1) {
+                    sessionDialogues[existingDialogueIndex] = dialogueObject; // Actualizar existente
+                } else {
+                    sessionDialogues.push(dialogueObject); // Añadir nuevo
+                }
+                
+                try {
+                    localStorage.setItem('socraticSessionDialogues', JSON.stringify(sessionDialogues));
+                } catch (e) {
+                    console.error("Error al guardar diálogos en localStorage:", e);
+                }
+            }
+            // No limpiar currentDialogueMessages aquí, se hace al iniciar uno nuevo o cargar otro.
+            renderDialogueHistory(); // Siempre re-renderizar para reflejar cambios o mantener estado
+        }
+
         function startNewDialogue() {
             if (!apiKey) { alert('Por favor, configura tu API Key primero.'); configApiKeyButton.click(); return; }
-            archiveCurrentDialogue();
-            isViewingHistory = false;
-            currentDialogueMessages = [];
-            initialUserIdea = '';
+            
+            archiveCurrentDialogue(); // Archivar el diálogo activo actual si existe
+            isViewingHistory = false; 
+
+            currentDialogueMessages = []; // Reiniciar mensajes del diálogo activo
+            initialUserIdea = ''; 
             currentStepIndex = 0;
             interactionsInCurrentStep = 0;
-            updateProgressBar();
+            
+            updateProgressBarForDialogue(null); 
             const firstStep = socraticSteps[0];
-            displayInitialSystemMessage(firstStep.ai_instruction_user_prompt, true);
+            displayInitialSystemMessage(firstStep.ai_instruction_user_prompt, true); 
+            
             userInput.disabled = false;
             sendButton.disabled = false;
             userInput.placeholder = "Escribe tu idea o creencia inicial aquí...";
             userInput.value = '';
             userInput.focus();
             startDialogueButton.textContent = "Iniciar Diálogo Nuevo";
-            restartDialogueButton.disabled = true;
-            updateExportButtonState();
+            restartDialogueButton.disabled = true; // Deshabilitado hasta que haya algo que reiniciar
+            updateExportButtonState(); // Los botones de exportar deberían estar deshabilitados
+
+            Array.from(dialogueHistoryList.children).forEach(li => li.classList.remove('active-history-item'));
         }
 
         function restartCurrentDialogue() {
-            isViewingHistory = false;
-            currentDialogueMessages = [];
-            initialUserIdea = '';
-            currentStepIndex = 0;
-            interactionsInCurrentStep = 0;
-            updateProgressBar();
-            const firstStep = socraticSteps[0];
-            displayInitialSystemMessage(firstStep.ai_instruction_user_prompt, true);
-            userInput.disabled = false;
-            sendButton.disabled = false;
-            userInput.placeholder = "Escribe tu idea o creencia inicial aquí...";
-            userInput.value = '';
-            userInput.focus();
-            restartDialogueButton.disabled = true;
-            updateExportButtonState();
-        }
-
-        function archiveCurrentDialogue() {
-            if (currentDialogueMessages.length > 0 && !currentDialogueMessages.every(m => m.role === 'system')) {
-                const title = initialUserIdea || `Diálogo #${sessionDialogues.length + 1}`;
-                sessionDialogues.push({ title: title, messages: [...currentDialogueMessages], finalStep: currentStepIndex });
-                renderDialogueHistory();
+            if (currentDialogueMessages.length === 0 && !initialUserIdea) { // Si no hay nada que reiniciar
+                 startNewDialogue(); return;
             }
-            currentDialogueMessages = [];
-            initialUserIdea = '';
+            if (confirm("¿Estás seguro de que quieres reiniciar el diálogo actual? Se perderá el progreso no archivado.")) {
+                isViewingHistory = false; 
+                // No se archiva, se descarta el progreso del diálogo activo actual
+                currentDialogueMessages = []; 
+                initialUserIdea = ''; 
+                currentStepIndex = 0;
+                interactionsInCurrentStep = 0;
+
+                updateProgressBarForDialogue(null);
+                const firstStep = socraticSteps[0];
+                displayInitialSystemMessage(firstStep.ai_instruction_user_prompt, true);
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                userInput.placeholder = "Escribe tu idea o creencia inicial aquí...";
+                userInput.value = '';
+                userInput.focus();
+                restartDialogueButton.disabled = true; // Deshabilitado hasta que haya algo que reiniciar
+                updateExportButtonState();
+
+                Array.from(dialogueHistoryList.children).forEach(li => li.classList.remove('active-history-item'));
+            }
         }
 
         async function handleUserMessage() {
             const userMessageText = userInput.value.trim();
-            if (!userMessageText) return;
+            if (!userMessageText || sendButton.disabled) return;
 
-            if (initialPromptDisplayArea.style.display === 'block') {
+            hideSuggestedTopics(); 
+
+            if (initialPromptDisplayArea.style.display === 'block' || chatArea.style.display === 'none') {
                 initialPromptDisplayArea.style.display = 'none';
                 chatArea.style.display = 'flex';
-                chatArea.innerHTML = '';
-                displayedDialogueMessages = [];
+                chatArea.innerHTML = ''; // Limpiar mensajes de "Sistema:..." si los hubiera
+                displayedDialogueMessages = []; // Empezar array de mensajes para el chat
             }
 
+            // Si es el primer mensaje del usuario en un nuevo diálogo, asignarle un ID de diálogo
+            // Esto ayuda a rastrear si estamos actualizando un diálogo existente al archivar.
+            const dialogueIdForThisTurn = currentDialogueMessages[0]?.dialogueId || Date.now().toString();
+            if (currentDialogueMessages.length === 0) {
+                currentDialogueMessages.push({ dialogueId: dialogueIdForThisTurn, role: 'user', content: userMessageText });
+            } else {
+                 currentDialogueMessages.push({ role: 'user', content: userMessageText });
+            }
+
+
             addMessageToChatArea('user', userMessageText);
-            currentDialogueMessages.push({ role: 'user', content: userMessageText });
-            displayedDialogueMessages = [...currentDialogueMessages];
+            displayedDialogueMessages = [...currentDialogueMessages]; // Actualizar lo que se muestra
+
             userInput.value = '';
             sendButton.disabled = true;
             userInput.disabled = true;
             thinkingIndicator.style.display = 'block';
-            restartDialogueButton.disabled = false;
+            restartDialogueButton.disabled = false; // Ahora se puede reiniciar
             updateExportButtonState();
 
-            if (currentStepIndex === 0 && !initialUserIdea) initialUserIdea = userMessageText;
+            if (currentStepIndex === 0 && !initialUserIdea) {
+                initialUserIdea = userMessageText;
+                // Asignar el ID del diálogo al primer mensaje si aún no existe, para archivado
+                if (!currentDialogueMessages[0].dialogueId) {
+                    currentDialogueMessages[0].dialogueId = dialogueIdForThisTurn;
+                }
+            }
+
 
             try {
                 const aiResponse = await getAIResponse(userMessageText); 
@@ -535,52 +668,60 @@
                 
                 if (currentStepIndex >= socraticSteps.length -1 && interactionsInCurrentStep >= MIN_INTERACTIONS_PER_STEP) { 
                      addSystemMessageToChat("Has completado los pasos socráticos. Puedes reflexionar, reiniciar o iniciar uno nuevo.");
+                     userInput.placeholder = "Diálogo finalizado. Inicia uno nuevo o revisa el historial.";
+                     userInput.disabled = true; // Deshabilitar input al final
+                     sendButton.disabled = true; // Deshabilitar send al final
                 }
-                updateProgressBar();
+                updateProgressBarForDialogue(null);
 
             } catch (error) {
                 console.error('Error fetching AI response:', error);
-                addSystemMessageToChat(`Error: ${error.message}. Revisa tu API Key, el modelo seleccionado y la consola.`); // Mensaje de error mejorado
+                addSystemMessageToChat(`Error: ${error.message}. Revisa tu API Key, el modelo seleccionado y la consola.`);
             } finally {
-                sendButton.disabled = false;
-                userInput.disabled = false;
-                userInput.focus();
+                if (!(currentStepIndex >= socraticSteps.length -1 && interactionsInCurrentStep >= MIN_INTERACTIONS_PER_STEP)) {
+                    sendButton.disabled = false;
+                    userInput.disabled = false;
+                    userInput.focus();
+                    userInput.placeholder = "Escribe tu respuesta aquí...";
+                }
                 thinkingIndicator.style.display = 'none';
-                userInput.placeholder = (currentStepIndex < socraticSteps.length && !isViewingHistory) ?
-                                        "Escribe tu respuesta aquí..." :
-                                        "Diálogo finalizado o viendo historial.";
             }
         }
 
         async function getAIResponse(currentUserMessage) {
             const step = socraticSteps[currentStepIndex];
             let instructionPrompt = step.ai_role_prompt_template
-                .replace('{USER_INPUT}', currentUserMessage)
-                .replace('{INITIAL_IDEA}', initialUserIdea || currentUserMessage)
+                .replace('{USER_INPUT}', currentUserMessage) // Esto es para el primer paso.
+                .replace('{INITIAL_IDEA}', initialUserIdea || currentUserMessage) // Usar la idea guardada o el mensaje actual
                 .replace('{LAST_USER_RESPONSE}', currentUserMessage);
 
             let nudgeMessage = "";
-            if (currentStepIndex > 1 &&
-                interactionsInCurrentStep >= MAX_INTERACTIONS_PER_STEP -1 && 
-                currentStepIndex < socraticSteps.length - 1) {
+            // Nudge solo si no es el último paso y se ha alcanzado MAX_INTERACTIONS_PER_STEP
+            if (currentStepIndex < socraticSteps.length - 1 && // No en el último paso
+                currentStepIndex > 1 && // No en los primeros dos pasos que avanzan rápido
+                interactionsInCurrentStep >= MAX_INTERACTIONS_PER_STEP -1) { // -1 porque la interacción actual aún no se ha contado para el *siguiente* turno
                 nudgeMessage = ` Has estado en este paso por varias interacciones. Considera guiar la conversación hacia los objetivos de la siguiente etapa: "${socraticSteps[currentStepIndex + 1].name}".`;
             }
 
+            const currentProfile = socratesProfiles.find(p => p.id === selectedSocratesProfileId) || socratesProfiles[0];
+            const profileStyleModifier = currentProfile.stylePromptModifier;
+
             const systemMessage = {
                 role: 'system',
-                content: `Eres Sócrates, un filósofo que guía al usuario a través del método socrático. Estás actualmente en el paso: "${step.name}". Sigue las instrucciones para este paso. ${instructionPrompt}. ${nudgeMessage} Sé conciso y haz preguntas que provoquen la reflexión. Limita tus respuestas a unas pocas frases. Considera el historial de conversación reciente para mantener la coherencia.`
+                content: `Eres Sócrates, un filósofo que guía al usuario a través del método socrático. ${profileStyleModifier} Estás actualmente en el paso: "${step.name}". Sigue las instrucciones para este paso: ${instructionPrompt}. ${nudgeMessage} Sé conciso y haz preguntas que provoquen la reflexión. Limita tus respuestas a unas pocas frases. Considera el historial de conversación reciente para mantener la coherencia.`
             };
+            
+            // Tomar los últimos mensajes, incluyendo el nuevo del usuario que está en currentDialogueMessages
+            const messagesForAPI = [ systemMessage, ...currentDialogueMessages.slice(-8).map(m => ({role: m.role, content: m.content})) ];
 
-            const messagesForAPI = [ systemMessage, ...currentDialogueMessages.slice(-8) ];
+
             let apiURL, requestBody;
-
             if (apiProvider === 'openai') {
                 apiURL = 'https://api.openai.com/v1/chat/completions';
                 requestBody = { model: openAIModel, messages: messagesForAPI, temperature: 0.65 };
-            } else { // openrouter
+            } else { 
                 apiURL = 'https://openrouter.ai/api/v1/chat/completions';
-                // NUEVO: Usar el modelo de OpenRouter seleccionado por el usuario
-                if (!openRouterModel) { // Fallback por si acaso no hay modelo seleccionado
+                if (!openRouterModel) { 
                     console.warn("No OpenRouter model selected, defaulting to mistralai/mistral-7b-instruct:free");
                     openRouterModel = 'mistralai/mistral-7b-instruct:free';
                 }
@@ -598,58 +739,221 @@
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorData.error?.message || 'Unknown error'}`);
+                const errorData = await response.json().catch(() => ({ error: { message: 'Respuesta de error no es JSON' } }));
+                throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorData.error?.message || 'Error desconocido de API'}`);
             }
             const data = await response.json();
+            if (!data.choices || data.choices.length === 0 || !data.choices[0].message) {
+                throw new Error("Respuesta de API inesperada: 'choices' no encontrado o vacío.");
+            }
             const aiContent = data.choices[0].message.content.trim();
 
+            // Avanzar el paso si el nudge estaba activo y se envió
             if (nudgeMessage && currentStepIndex < socraticSteps.length - 1) {
                 currentStepIndex++;
                 interactionsInCurrentStep = 0; 
             }
             return aiContent;
         }
-
+        
         function renderDialogueHistory() {
             dialogueHistoryList.innerHTML = '';
             dialogueHistorySection.style.display = (sessionDialogues.length > 0) ? 'block' : 'none';
             if (sessionDialogues.length === 0) return;
-            sessionDialogues.forEach((dialogue, index) => {
+
+            const sortedDialogues = [...sessionDialogues].sort((a, b) => parseInt(b.id, 10) - parseInt(a.id, 10));
+
+            sortedDialogues.forEach((dialogue) => {
                 const listItem = document.createElement('li');
-                listItem.textContent = dialogue.title;
-                listItem.dataset.index = index;
-                listItem.addEventListener('click', () => loadDialogueFromHistory(index));
+                listItem.dataset.id = dialogue.id;
+
+                const titleSpan = document.createElement('span');
+                titleSpan.textContent = dialogue.title || `Diálogo ${dialogue.id}`;
+                titleSpan.className = 'history-item-title';
+                titleSpan.title = "Ver este diálogo (solo lectura)";
+                titleSpan.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    loadDialogueFromHistory(dialogue.id, true); // true para modo lectura
+                });
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'history-item-actions';
+
+                const continueButton = document.createElement('button');
+                continueButton.textContent = 'Continuar';
+                continueButton.style.fontSize = '0.8em';
+                continueButton.style.padding = '3px 8px';
+                continueButton.title = "Retomar este diálogo";
+                continueButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm("¿Quieres archivar el diálogo activo actual (si existe y tiene contenido) y continuar con este diálogo?")) {
+                        loadDialogueFromHistory(dialogue.id, false); // false para modo continuar
+                    }
+                });
+                
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Borrar';
+                deleteButton.className = 'cancel-button';
+                deleteButton.style.fontSize = '0.8em';
+                deleteButton.style.padding = '3px 8px';
+                deleteButton.title = "Eliminar este diálogo del historial";
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteDialogueFromHistory(dialogue.id);
+                });
+
+                actionsDiv.appendChild(continueButton);
+                actionsDiv.appendChild(deleteButton);
+                listItem.appendChild(titleSpan);
+                listItem.appendChild(actionsDiv);
                 dialogueHistoryList.appendChild(listItem);
             });
         }
+        
+        function deleteDialogueFromHistory(dialogueId) {
+            if (confirm("¿Estás seguro de que quieres eliminar este diálogo permanentemente?")) {
+                sessionDialogues = sessionDialogues.filter(d => d.id !== dialogueId);
+                try {
+                    localStorage.setItem('socraticSessionDialogues', JSON.stringify(sessionDialogues));
+                    renderDialogueHistory(); 
+                    
+                    // Si el diálogo borrado era el que se estaba visualizando, limpiar la vista principal
+                    const activeHistoryItem = dialogueHistoryList.querySelector('.active-history-item');
+                    if (!activeHistoryItem && isViewingHistory) { // Si no queda ninguno activo y estábamos viendo historial
+                         startNewDialogue(); 
+                    } else if (activeHistoryItem && activeHistoryItem.dataset.id === dialogueId) {
+                        // Si se borró el que se estaba viendo, y no hay más, o el siguiente es diferente.
+                        startNewDialogue(); // O una lógica más sofisticada para cargar el "siguiente" o "anterior"
+                    }
+                     alert("Diálogo eliminado.");
+                } catch (e) {
+                    console.error("Error al eliminar diálogo de localStorage:", e);
+                    alert("Error al eliminar el diálogo.");
+                }
+            }
+        }
 
-        function loadDialogueFromHistory(index) {
-            const selectedDialogue = sessionDialogues[index];
-            if (!selectedDialogue) return;
-            isViewingHistory = true;
-            populateChatArea(selectedDialogue.messages);
+        function loadDialogueFromHistory(dialogueId, readOnlyMode) {
+            const selectedDialogue = sessionDialogues.find(d => d.id === dialogueId);
+            if (!selectedDialogue) { console.error("Diálogo no encontrado con ID:", dialogueId); return; }
+
+            if (!readOnlyMode) { 
+                if (currentDialogueMessages.length > 0 && !currentDialogueMessages.every(m => m.role === 'system')) {
+                    archiveCurrentDialogue(); 
+                }
+                
+                currentDialogueMessages = [...selectedDialogue.messages];
+                initialUserIdea = selectedDialogue.initialUserIdeaInternal || '';
+                currentStepIndex = selectedDialogue.finalStep || 0;
+                interactionsInCurrentStep = selectedDialogue.interactionsInCurrentStepInternal || 0;
+                isViewingHistory = false;
+                selectedSocratesProfileId = selectedDialogue.profileIdUsed || socratesProfiles[0].id; // Restaurar perfil
+                socratesProfileSelect.value = selectedSocratesProfileId;
+
+
+                populateChatArea(currentDialogueMessages); 
+                
+                userInput.disabled = (currentStepIndex >= socraticSteps.length -1 && interactionsInCurrentStep >= MIN_INTERACTIONS_PER_STEP);
+                sendButton.disabled = userInput.disabled;
+                userInput.placeholder = userInput.disabled ? "Diálogo finalizado. Inicia uno nuevo." : "Continúa la conversación...";
+                restartDialogueButton.disabled = false;
+                startDialogueButton.textContent = "Iniciar Diálogo Nuevo";
+            } else { 
+                isViewingHistory = true;
+                populateChatArea(selectedDialogue.messages);
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                userInput.placeholder = "Viendo diálogo del historial (solo lectura).";
+                startDialogueButton.textContent = "Volver al Diálogo Activo / Iniciar Nuevo";
+                restartDialogueButton.disabled = true; 
+            }
             
-            const segments = progressBarContainer.querySelectorAll('.progress-segment');
-            segments.forEach(s => s.classList.remove('active', 'visible')); 
-            segments.forEach((segment, idx) => {
-                if (idx <= (selectedDialogue.finalStep || 0) ) {
-                    segment.classList.add('visible');
+            updateProgressBarForDialogue(selectedDialogue); 
+
+            Array.from(dialogueHistoryList.children).forEach(li => {
+                li.classList.remove('active-history-item');
+                if (li.dataset.id === dialogueId) {
+                    li.classList.add('active-history-item');
                 }
             });
+            updateExportButtonState(); 
+        }
+        
+        function populateSuggestedTopics() {
+            suggestedTopicsList.innerHTML = ''; 
+            suggestedTopics.forEach(topic => {
+                const listItem = document.createElement('li');
+                listItem.style.padding = "8px 0";
+                listItem.style.borderBottom = "1px dotted #bdc3c7";
+                
+                const button = document.createElement('button');
+                button.textContent = topic;
+                button.style.backgroundColor = 'transparent';
+                button.style.border = 'none';
+                button.style.color = '#3498db';
+                button.style.textAlign = 'left';
+                button.style.padding = '0';
+                button.style.fontSize = '0.95em';
+                button.style.cursor = 'pointer';
+                button.addEventListener('mouseover', () => button.style.textDecoration = 'underline');
+                button.addEventListener('mouseout', () => button.style.textDecoration = 'none');
+                
+                button.addEventListener('click', () => {
+                    userInput.value = topic;
+                    userInput.focus();
+                    hideSuggestedTopics();
+                });
+                listItem.appendChild(button);
+                suggestedTopicsList.appendChild(listItem);
+            });
+            if (suggestedTopicsList.lastChild) {
+                suggestedTopicsList.lastChild.style.borderBottom = 'none';
+            }
+        }
 
-            userInput.disabled = true; sendButton.disabled = true;
-            userInput.placeholder = "Viendo diálogo del historial (solo lectura).";
-            startDialogueButton.textContent = "Volver al Diálogo Activo / Iniciar Nuevo";
-            restartDialogueButton.disabled = true;
-            Array.from(dialogueHistoryList.children).forEach(li => li.classList.remove('active-history-item'));
-            if(dialogueHistoryList.children[index]) dialogueHistoryList.children[index].classList.add('active-history-item');
-            updateExportButtonState();
+        function showSuggestedTopics() {
+            if (currentStepIndex === 0 && !initialUserIdea && (chatArea.style.display === 'none' || chatArea.innerHTML === '')) {
+                populateSuggestedTopics();
+                suggestedTopicsContainer.style.display = 'block';
+            }
+        }
+
+        function hideSuggestedTopics() {
+            suggestedTopicsContainer.style.display = 'none';
+        }
+
+        function populateSocratesProfilesDropdown() {
+            socratesProfileSelect.innerHTML = '';
+            socratesProfiles.forEach(profile => {
+                const option = document.createElement('option');
+                option.value = profile.id;
+                option.textContent = profile.displayName;
+                socratesProfileSelect.appendChild(option);
+            });
+            socratesProfileSelect.value = selectedSocratesProfileId;
+        }
+
+        function handleProfileSelectionChange() {
+            selectedSocratesProfileId = socratesProfileSelect.value;
+            localStorage.setItem('socraticSelectedProfileId', selectedSocratesProfileId);
+            console.log("Perfil de Sócrates cambiado a:", selectedSocratesProfileId);
         }
 
         function exportToMarkdown() {
              if (!displayedDialogueMessages || displayedDialogueMessages.length === 0) { alert("No hay diálogo para exportar."); return; }
             let markdownContent = `# Diálogo Socrático\n\n`;
+            if (initialUserIdea && isViewingHistory) { // Si estamos viendo historial, usar la idea inicial de ese historial
+                 const activeHistoryItem = dialogueHistoryList.querySelector('.active-history-item');
+                 if (activeHistoryItem) {
+                    const dialogue = sessionDialogues.find(d => d.id === activeHistoryItem.dataset.id);
+                    if (dialogue && dialogue.initialUserIdeaInternal) {
+                        markdownContent += `**Idea Inicial:** ${dialogue.initialUserIdeaInternal}\n\n`;
+                    }
+                 }
+            } else if (initialUserIdea && !isViewingHistory) {
+                markdownContent += `**Idea Inicial:** ${initialUserIdea}\n\n`;
+            }
+            
             displayedDialogueMessages.forEach(msg => {
                 if (msg.role === 'user') markdownContent += `**Usuario:** ${msg.content}\n\n`;
                 else if (msg.role === 'assistant') markdownContent += `**Sócrates (IA):** ${msg.content}\n\n`;
@@ -658,7 +962,8 @@
             const blob = new Blob([markdownContent], { type: 'text/markdown' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url; a.download = `dialogo-socratico-${new Date().toISOString().slice(0,10)}.md`;
+            const filenameDate = new Date().toISOString().slice(0,16).replace('T','_').replace(':','-');
+            a.href = url; a.download = `dialogo-socratico-${filenameDate}.md`;
             document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         }
         function exportToPDF() {
@@ -684,13 +989,36 @@
             userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey && !sendButton.disabled) { e.preventDefault(); handleUserMessage(); }});
             exportMdButton.addEventListener('click', exportToMarkdown);
             exportPdfButton.addEventListener('click', exportToPDF);
+            socratesProfileSelect.addEventListener('change', handleProfileSelectionChange);
+            userInput.addEventListener('input', () => {
+                if (userInput.value.trim() !== '') {
+                    hideSuggestedTopics();
+                } else if (currentStepIndex === 0 && !initialUserIdea && (chatArea.style.display === 'none' || chatArea.innerHTML === '')) {
+                    showSuggestedTopics();
+                }
+            });
+
 
             setupProgressBar();
-            loadApiSettings(); // Asegúrate de que esto ahora carga el modelo de OpenRouter también
-            updateProgressBar();
-            restartDialogueButton.disabled = true;
-            updateExportButtonState();
-            chatArea.style.display = 'none';
+            populateSocratesProfilesDropdown();
+            loadAppSettings(); // Carga API settings, historial, y perfil de Sócrates
+            updateProgressBarForDialogue(null); // Inicializar barra de progreso para diálogo activo (vacío)
+            
+            // Lógica inicial para mostrar sugerencias si aplica
+            if (currentStepIndex === 0 && !initialUserIdea && chatArea.style.display === 'none' && initialPromptDisplayArea.style.display === 'block') {
+                showSuggestedTopics();
+            } else {
+                hideSuggestedTopics();
+            }
+            if(sessionDialogues.length === 0 && !apiKey) { // Si es la primera vez y no hay API key
+                 displayInitialSystemMessage("Bienvenido. Por favor, configura tu API Key para comenzar.");
+            } else if (sessionDialogues.length === 0 && apiKey && currentDialogueMessages.length === 0) { // Si hay API pero no diálogos
+                displayInitialSystemMessage(socraticSteps[0].ai_instruction_user_prompt, true);
+            }
+
+
+            restartDialogueButton.disabled = true; // Siempre deshabilitado al inicio
+            updateExportButtonState(); // Estado inicial de botones de exportación
         });
     </script>
 </body>
