@@ -14,7 +14,7 @@ Benvingut/da a Socratia, una eina web dissenyada per guiar-te en un autèntic di
 No cal instal·lar res. Pots començar a examinar les teves idees a l'instant accedint a la demo online.
 Accedeix a la Demo Online Fent Clic Aquí
 
-[socratia!](https://github.com/Xesco-Tejedor/socratia/blob/main/assets/socratia.jpg)
+![socratia](/assets/socratia.jpg)
 ✨ Característiques Principals
 ✨ Diàleg Guiat Pas a Pas: L'aplicació t'acompanya a través de les sis fases del mètode socràtic, des del plantejament inicial fins a la "maièutica" o part de les idees.
 🤖 IA en el Rol de Sòcrates: La intel·ligència artificial actua com el teu mestre filòsof, formulant preguntes precises per provar la consistència i profunditat del teu pensament.
